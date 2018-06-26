@@ -16,10 +16,39 @@ DEST_FILE = "../data/word_counts.csv"
 
 
 def main():
-    word_counts = Counter()
+    table = {}
     for url in ngram_urls():
-        word_counts.update(build_frequency_table(retrieve(url)))
-    write_table(word_counts, DEST_FILE)
+        data = retrieve(url)
+        logging.info(f"retrieved {f}")
+        lines = file_from_zipped(data)
+        cleaned = rewrite_without_year_or_tag(lines)
+        table.update(filter_on_frequency(cleaned))
+        logging.info(f"added to table")
+    write_table(table, DEST_FILE)
+
+
+def filter_on_frequency(word_occurences):
+    for word, appearance_count, corpus_count in word_occurences:
+        if corpus_count > 100:
+            yield word, appearance_count
+
+
+def rewrite_without_year_or_tag(ngram_file):
+    word, appearances, corpora = None, 0, 0
+
+    for line in ngram_file:
+        w, _, a, c = line.split()
+        w, a, c = strip_tags(w), int(a), int(c)
+        if w != word:
+            if word is not None:
+                yield word, appearances, corpora
+            word, appearances, corpora = w, a, c
+        else:
+            appearances += a
+            corpora += c
+
+    if word is not None:
+        yield word, appearances, corpora
 
 
 def build_frequency_table(ngram_counts):
@@ -70,8 +99,8 @@ def retrieve(url):
         return r.content
 
 
-def lines_from_zipped(data):
-    return io.BytesIO(gzip.decompress(data)).readlines()
+def file_from_zipped(data):
+    return io.BytesIO(gzip.decompress(data))
 
 
 if __name__ == "__main__":
