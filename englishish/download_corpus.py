@@ -19,8 +19,8 @@ def main():
     table = {}
     for url in ngram_urls():
         data = retrieve(url)
-        logging.info(f"retrieved {f}")
-        lines = file_from_zipped(data)
+        logging.info(f"retrieved {url}")
+        lines = lines_from_zipped(data)
         cleaned = rewrite_without_year_or_tag(lines)
         table.update(filter_on_frequency(cleaned))
         logging.info(f"added to table")
@@ -99,8 +99,9 @@ def retrieve(url):
         return r.content
 
 
-def file_from_zipped(data):
-    return io.BytesIO(gzip.decompress(data))
+def lines_from_zipped(data):
+    for line in io.BytesIO(gzip.decompress(data)):
+        yield line.decode("utf-8")
 
 
 if __name__ == "__main__":
