@@ -16,15 +16,15 @@ DEST_FILE = "../data/word_counts.csv"
 
 
 def main():
-    table = {}
-    for url in ngram_urls():
-        data = retrieve(url)
-        logging.info(f"retrieved {url}")
-        lines = lines_from_zipped(data)
-        cleaned = rewrite_without_year_or_tag(lines)
-        table.update(filter_on_frequency(cleaned))
-        logging.info(f"added to table")
-    write_table(table, DEST_FILE)
+    with open(DEST_FILE, 'w') as csv:
+        for url in ngram_urls():
+            data = retrieve(url)
+            logging.info(f"retrieved {url}")
+            lines = lines_from_zipped(data)
+            cleaned = rewrite_without_year_or_tag(lines)
+            for word, count in filter_on_frequency(cleaned):
+                csv.write(f"{word}\t{count}\n")
+            print(f"Finished up to {word}")
 
 
 def filter_on_frequency(word_occurences):
