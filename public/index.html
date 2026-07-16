@@ -76,6 +76,13 @@
     font-family: ui-sans-serif, system-ui, sans-serif; font-size: .85rem; color: var(--dim); }
   .toggles label { display: flex; gap: .4rem; align-items: center; cursor: pointer; }
   .loading { color: var(--dim); font-style: italic; }
+  #cite { margin-top: 1rem; padding-top: .85rem; border-top: 1px solid var(--line);
+    font-family: ui-sans-serif, system-ui, sans-serif; font-size: .78rem; color: var(--dim); }
+  #cite:empty { display: none; }
+  #cite .reg { border: 1px solid var(--line); border-radius: 20px; padding: .05em .5em;
+    margin-left: .2em; font-size: .92em; }
+  #cite a { color: var(--accent); text-decoration: none; border-bottom: 1px solid transparent; }
+  #cite a:hover { border-bottom-color: var(--accent); }
 </style>
 </head>
 <body>
@@ -110,7 +117,8 @@
   </div>
 
   <div class="panel">
-    <div id="out" class="loading">Loading lexicon…</div>
+    <div id="out" class="loading">Loading…</div>
+    <div id="cite"></div>
   </div>
 
   <details>
@@ -163,7 +171,11 @@
 </div>
 
 <script>
+// Fallback only — the real text is a random passage from public/passages/, one per page load.
 const DEFAULT_TEXT = `It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife. However little known the feelings or views of such a man may be on his first entering a neighbourhood, this truth is so well fixed in the minds of the surrounding families, that he is considered the rightful property of some one or other of their daughters.`;
+
+let PASSAGE = null;   // {t, b, a, r} — text, book, author, register
+let SHARD = null;     // the one shard we downloaded, for the "another" button
 
 // Laufer & Ravenhorst-Kalovski (2010) Table 3, n=745. Vocabulary -> reading score out of 150
 // (Israeli NITE psychometric English section; national mean 104, SD 24). The non-linearity is
@@ -205,7 +217,7 @@ function render() {
   if (!WORDS) return;
   const vocab = sliderToVocab(+$('vocab').value);
   const fuzzy = $('fuzzy').checked, mark = $('mark').checked;
-  const text = $('src').value || DEFAULT_TEXT;
+  const text = $('src').value || PASSAGE?.t || DEFAULT_TEXT;
   let known = 0, total = 0, out = '';
 
   for (const tok of text.match(TOKEN) || []) {
@@ -246,20 +258,51 @@ function render() {
   }
   const c = comprehension(vocab);
   $('comp').textContent = Math.round(c) + '/150';
+
+  const cite = $('cite');
+  if (PASSAGE && !$('src').value) {
+    cite.innerHTML = `<em>${escapeHtml(PASSAGE.b)}</em> — ${escapeHtml(PASSAGE.a)}`
+      + ` <span class="reg">${escapeHtml(PASSAGE.r)}</span>`
+      + ` · <a href="#" id="again">another</a>`;
+    $('again').onclick = e => { e.preventDefault(); pick(); render(); };
+  } else {
+    cite.textContent = '';
+  }
 }
 
 function escapeHtml(s) {
   return s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 }
 
-fetch('./lexicon.json')
+function pick() {
+  if (SHARD && SHARD.length) PASSAGE = SHARD[Math.floor(Math.random() * SHARD.length)];
+}
+
+// One random passage per page load, from a 2,600-passage public-domain corpus.
+//
+// The corpus is sharded because the page shows exactly one passage: downloading all 2,600 would
+// cost ~500KB gzipped to use ~0.2KB of it. A random shard is ~20KB, and random-shard +
+// random-passage-within-shard is still uniform over the whole corpus. The "another" button
+// re-picks inside the shard we already have, so it costs nothing.
+const passages = fetch('./passages/manifest.json')
   .then(r => r.json())
-  .then(d => { WORDS = d.words; render(); })
-  .catch(e => { $('out').textContent = 'Could not load lexicon.json — ' + e.message; });
+  .then(m => fetch(`./passages/${String(Math.floor(Math.random() * m.shards)).padStart(2, '0')}.json`))
+  .then(r => r.json())
+  .then(s => { SHARD = s; pick(); })
+  .catch(() => { /* fall back to DEFAULT_TEXT; the toy still works */ });
+
+const lexicon = fetch('./lexicon.json')
+  .then(r => r.json())
+  .then(d => { WORDS = d.words; });
+
+Promise.allSettled([lexicon, passages]).then(() => {
+  if (!WORDS) { $('out').textContent = 'Could not load lexicon.json'; return; }
+  render();
+});
 
 for (const id of ['vocab', 'fuzzy', 'mark']) $(id).addEventListener('input', render);
 $('src').addEventListener('input', render);
-$('src').placeholder = DEFAULT_TEXT;
+$('src').placeholder = 'Paste anything. Leave empty for a random passage.';
 </script>
 </body>
 </html>
