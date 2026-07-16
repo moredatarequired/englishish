@@ -17,7 +17,8 @@ At "you know the top 800 lemmas" (~80% token coverage):
 ## Run it
 
     uv run python -m englishish.build          # rebuild public/lexicon.json (~40s)
-    uv run python -m englishish.passages       # rebuild public/passages/ from 46 Gutenberg books
+    uv run python -m englishish.passages       # rebuild public/passages/ from 48 Gutenberg books
+    uv run python -m englishish.check_passages # verify no boilerplate / mislabelled books ship
     uv run python -m englishish.render         # the map + mirrored irregularity
     uv run python -m englishish.check_letters  # letter-frequency check
     uv run python -m englishish.demo_nonfinite # non-finite forms English lacks
@@ -25,7 +26,7 @@ At "you know the top 800 lemmas" (~80% token coverage):
 The site is `public/` — static, no build step. `python3 -m http.server 8731 --directory public`.
 `data/` holds cached downloads (gitignored); see `data.py` for provenance. Builds are deterministic.
 
-Every page load shows a random passage from 2,600 public-domain paragraphs across 46 Gutenberg
+Every page load shows a random passage from 2,600 public-domain paragraphs across 48 Gutenberg
 books, picked for register spread rather than popularity. That's the interesting axis: at a fixed
 2,000-word vocabulary, coverage runs ~86% for children's books and ~78% for essays. Nation measured
 the same thing (~88% novels vs ~83% newspapers) — the same vocabulary is a different language

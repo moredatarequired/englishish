@@ -33,6 +33,16 @@ SHARDS = 26              # the page shows ONE passage, so it should download ~on
 SEED = 0xE4611
 MAX_PASSAGES = 2600      # ~1MB raw, ~350KB gzipped. Effectively infinite for a toy.
 PER_BOOK_CAP = 70        # keep any one book from dominating the sample
+# Editorial front matter lives at the front, and no signature list can recognise it. Leviathan's
+# first four usable paragraphs are a transcriber discussing the source edition's margin notes,
+# italics and quote references -- prose, in English, mentioning nothing detectable. Reading the
+# output found it after an automated check passed clean.
+#
+# So drop the leading paragraphs structurally instead of trying to recognise them. Blunt, but it
+# targets exactly where the problem lives and it costs nothing: we keep 2,600 of ~26,500 usable
+# paragraphs, so 6 x 48 = 288 dropped is free. It does cost a few legitimate paragraphs where the
+# front matter is real (Darwin's epigraphs, Moby-Dick's Etymology) -- worth it.
+SKIP_LEADING = 6
 UA = "englishish/0.1 (+https://englishish.vercel.app) one-off corpus build"
 
 # (gutenberg id, title, author, register). Chosen for spread, not popularity: the slider is far
@@ -79,13 +89,15 @@ BOOKS: list[tuple[int, str, str, str]] = [
     (1497, "The Republic", "Plato", "philosophy"),
     (1232, "The Prince", "Niccolò Machiavelli", "philosophy"),
     (3207, "Leviathan", "Thomas Hobbes", "philosophy"),
-    (4363, "Beyond Good and Evil", "Friedrich Nietzsche", "philosophy"),
     (205, "Walden", "Henry David Thoreau", "essay"),
     (132, "The Art of War", "Sun Tzu", "philosophy"),
     (5827, "The Problems of Philosophy", "Bertrand Russell", "philosophy"),
-    (14975, "The Voyage of the Beagle", "Charles Darwin", "science"),
     (1080, "A Modest Proposal", "Jonathan Swift", "essay"),
-    (15491, "The Autobiography of Benjamin Franklin", "Benjamin Franklin", "memoir"),
+    (944, "The Voyage of the Beagle", "Charles Darwin", "science"),
+    (148, "The Autobiography of Benjamin Franklin", "Benjamin Franklin", "memoir"),
+    (15491, "Micrographia", "Robert Hooke", "science"),
+    (14474, "The Chemical History of a Candle", "Michael Faraday", "science"),
+    (2300, "The Descent of Man", "Charles Darwin", "science"),
     (2680, "Meditations", "Marcus Aurelius", "philosophy"),
 ]
 
@@ -128,6 +140,34 @@ def strip_gutenberg(text: str) -> str:
     return text
 
 
+# Marker-stripping is necessary but NOT sufficient, and both failure modes are real:
+#
+#   * Files whose header was already removed have no START marker to anchor on, so nothing gets
+#     stripped from the front. Alice and Moby-Dick (committed here in 2019, headers hand-removed)
+#     both report "-E", and Moby-Dick leaked a transcriber's note about "a combination of etexts,
+#     one from the now-defunct ERIS project at Virginia Tech".
+#   * Gutenberg's own boilerplate can sit INSIDE the markers, where stripping can't reach it.
+#     Darwin's Origin carries "There are several editions of this ebook in the Project Gutenberg
+#     collection... Click on any of the filenumber" after *** START OF ***.
+#
+# So filter on content too. The argument is simple: no 19th-century novel discusses Project
+# Gutenberg, etexts, or proofreaders. A paragraph of Moby-Dick that mentions Project Gutenberg is
+# proof that it isn't Moby-Dick.
+#
+# Deliberately Gutenberg-SPECIFIC. A first pass at this used generic English -- "scanned",
+# "license", "prepared by", "donation" -- and drowned in false positives ("a donation of one
+# hundred piastres" in Dumas, "Charters are Donations of the Soveraign" in Hobbes). Worse, `IRS\b`
+# with no LEADING word boundary matched the end of "chairs"/"affairs"/"theirs" 62 times. A noisy
+# detector hides the real hits.
+BOILERPLATE_RE = re.compile(
+    r"(?i)"
+    r"gutenberg|pglaf|\be-?texts?\b|gutenberg-tm"   # e-?text: Leviathan says "E-text", hyphenated
+    r"|transcriber|proofread|scanned images"
+    r"|literary archive foundation|michael s\.? hart|501\(c\)\(3\)|\bIRS\b"
+    r"|several editions of this|various characteristics|filenumber"
+    r"|https?://|www\.\S|\S+@\S+\.\S"
+)
+
 HEADING_RE = re.compile(r"^(chapter|book|part|volume|act|scene|canto|letter|section)\b", re.I)
 ROMAN_RE = re.compile(r"^[IVXLCDM]+\.?$")
 BAD_RE = re.compile(r"(_|\[|\]|\{|\}|\||\*|>{2}|https?://|@|\d{4}\s*,\s*\d)")
@@ -150,6 +190,8 @@ def usable(p: str) -> bool:
     headings, tables of contents, transcriber's notes, underscore-delimited italics, roman
     numerals, verse. Any of those in the sample makes the toy look broken rather than hard.
     """
+    if BOILERPLATE_RE.search(p):
+        return False
     if not (220 <= len(p) <= 900):
         return False
     if p[-1] not in ".?!”\"'":
@@ -183,7 +225,7 @@ def main() -> None:
         if not raw:
             failed += 1
             continue
-        paras = [p for p in paragraphs(strip_gutenberg(raw)) if usable(p)]
+        paras = [p for p in paragraphs(strip_gutenberg(raw)) if usable(p)][SKIP_LEADING:]
         rng.shuffle(paras)
         keep = paras[:PER_BOOK_CAP]
         pool.extend((p, title, author, register) for p in keep)
