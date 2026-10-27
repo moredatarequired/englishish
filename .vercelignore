@@ -1,0 +1,12 @@
+# The generator is build-time tooling. It never runs on Vercel: the site is public/index.html plus
+# the prebuilt public/lexicon.json, and that's the whole deployment.
+#
+# Excluding the Python also stops zero-config detection from finding pyproject.toml and trying to
+# deploy this as a Python app, which is what it does otherwise ("No python entrypoint found").
+src/
+pyproject.toml
+uv.lock
+.python-version
+data/
+.venv/
+__pycache__/

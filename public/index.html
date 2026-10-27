@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>English-ish</title>
+<style>
+  :root {
+    --bg: #fbfaf8; --fg: #1a1917; --dim: #75716b; --line: #e3dfd8;
+    --sub: #b4441e; --sub-bg: #fdf0ea; --accent: #1f5d50; --card: #fff;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #131313; --fg: #e8e6e1; --dim: #8d8880; --line: #2c2b28;
+      --sub: #f0865c; --sub-bg: #2a1c15; --accent: #64bfa8; --card: #1b1b1a;
+    }
+  }
+  :root[data-theme="light"] {
+    --bg: #fbfaf8; --fg: #1a1917; --dim: #75716b; --line: #e3dfd8;
+    --sub: #b4441e; --sub-bg: #fdf0ea; --accent: #1f5d50; --card: #fff;
+  }
+  :root[data-theme="dark"] {
+    --bg: #131313; --fg: #e8e6e1; --dim: #8d8880; --line: #2c2b28;
+    --sub: #f0865c; --sub-bg: #2a1c15; --accent: #64bfa8; --card: #1b1b1a;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--fg);
+    font: 16px/1.65 ui-serif, Georgia, "Times New Roman", serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 3rem 1.25rem 5rem; }
+  h1 { font-size: 1.9rem; margin: 0 0 .3rem; letter-spacing: -.02em; }
+  .lede { color: var(--dim); margin: 0 0 2.5rem; font-size: 1.02rem; }
+  .ui-font { font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; }
+
+  .panel {
+    background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+    padding: 1.25rem 1.35rem; margin-bottom: 1.5rem;
+  }
+  label.row { display: flex; justify-content: space-between; align-items: baseline;
+    font-family: ui-sans-serif, system-ui, sans-serif; font-size: .82rem;
+    text-transform: uppercase; letter-spacing: .07em; color: var(--dim); margin-bottom: .6rem; }
+  label.row b { font-size: 1.35rem; color: var(--fg); letter-spacing: 0;
+    text-transform: none; font-variant-numeric: tabular-nums; font-weight: 600; }
+  input[type=range] { width: 100%; accent-color: var(--accent); margin: 0; }
+
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: .25rem 1rem; margin-top: 1.1rem; padding-top: 1.1rem; border-top: 1px solid var(--line);
+    font-family: ui-sans-serif, system-ui, sans-serif; }
+  .stat .k { font-size: .68rem; text-transform: uppercase; letter-spacing: .07em;
+    color: var(--dim); display: block; }
+  .stat .v { font-size: 1.15rem; font-variant-numeric: tabular-nums; }
+  .stat .n { font-size: .74rem; color: var(--dim); }
+
+  #out { font-size: 1.12rem; }
+  #out .s {
+    color: var(--sub); background: var(--sub-bg); border-radius: 3px;
+    padding: 0 .12em; cursor: help; text-decoration: underline;
+    text-decoration-style: dotted; text-decoration-color: color-mix(in srgb, var(--sub) 45%, transparent);
+    text-underline-offset: .18em;
+  }
+  #out .s:hover { background: var(--sub); color: var(--bg); }
+  textarea {
+    width: 100%; min-height: 6.5rem; resize: vertical; background: transparent;
+    color: var(--fg); border: 1px solid var(--line); border-radius: 7px; padding: .7rem .8rem;
+    font: 15px/1.6 ui-serif, Georgia, serif;
+  }
+  details { margin-top: 1.4rem; }
+  summary { cursor: pointer; color: var(--dim); font-size: .86rem;
+    font-family: ui-sans-serif, system-ui, sans-serif; }
+  details p, details li { font-size: .9rem; color: var(--dim); }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .86em;
+    background: color-mix(in srgb, var(--fg) 7%, transparent); padding: .1em .3em; border-radius: 3px; }
+  .toggles { display: flex; gap: 1.25rem; flex-wrap: wrap; margin-top: 1rem;
+    font-family: ui-sans-serif, system-ui, sans-serif; font-size: .85rem; color: var(--dim); }
+  .toggles label { display: flex; gap: .4rem; align-items: center; cursor: pointer; }
+  .loading { color: var(--dim); font-style: italic; }
+  #cite { margin-top: 1rem; padding-top: .85rem; border-top: 1px solid var(--line);
+    font-family: ui-sans-serif, system-ui, sans-serif; font-size: .78rem; color: var(--dim); }
+  #cite:empty { display: none; }
+  #cite .reg { border: 1px solid var(--line); border-radius: 20px; padding: .05em .5em;
+    margin-left: .2em; font-size: .92em; }
+  #cite a { color: var(--accent); text-decoration: none; border-bottom: 1px solid transparent; }
+  #cite a:hover { border-bottom-color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>English-ish</h1>
+  <p class="lede">
+    Every English word maps to an invented one that looks and sounds like English without being
+    English. Drag the slider to set how many words you know. This is what reading a language you
+    half-know actually feels like.
+  </p>
+
+  <div class="panel">
+    <label class="row" for="vocab">
+      <span>Your vocabulary</span>
+      <b><span id="vocabN">3,000</span> words</b>
+    </label>
+    <input type="range" id="vocab" min="0" max="1000" value="620">
+
+    <div class="toggles">
+      <label><input type="checkbox" id="fuzzy" checked> Realistic knowledge (holes &amp; spikes)</label>
+      <label><input type="checkbox" id="mark" checked> Highlight substitutions</label>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><span class="k">Token coverage</span>
+        <span class="v" id="cov">—</span></div>
+      <div class="stat"><span class="k">Unknown words</span>
+        <span class="v" id="rate">—</span><span class="n" id="rateN"></span></div>
+      <div class="stat"><span class="k">Est. comprehension</span>
+        <span class="v" id="comp">—</span><span class="n">Laufer &amp; R-K 2010</span></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div id="out" class="loading">Loading…</div>
+    <div id="cite"></div>
+  </div>
+
+  <details>
+    <summary>Your own text</summary>
+    <textarea id="src"></textarea>
+  </details>
+
+  <details>
+    <summary>What you're looking at, and what's still wrong with it</summary>
+    <p>
+      The invented words come from a character n-gram trained on SCOWL's 127k-word English
+      lexicon, with everything that's already a word in English or 41 other languages thrown out,
+      plus anything unpronounceable, anything on a slur/profanity blocklist, and anything too
+      close to the word it replaces. Words are matched by length and assigned in frequency order,
+      so English-ish's commonest words are its most ordinary-looking ones.
+    </p>
+    <p>
+      <b>Morphology is mirrored, not regularised.</b> If you know a stem you get its whole family
+      — and irregularity is preserved by <em>class</em>, not by word. English's
+      <code>sing/sang/sung</code>, <code>ring/rang/rung</code> and <code>swim/swam/swum</code> all
+      share one vowel alternation because they're the residue of Proto-Germanic ablaut; English-ish
+      gives that class its own alternation and applies it to the same members. So English-ish has
+      ablaut, umlaut, zero-marked pasts and suppletion, in the same places English does. Paradigms
+      are checked to collapse exactly where English's collapse: <code>walk/walked/walked</code>
+      merges, <code>sing/sang/sung</code> doesn't.
+    </p>
+    <p><b>Known problems, honestly:</b></p>
+    <ul>
+      <li>Stems still contain Latinate affix debris — things that read like <code>-tion</code> or
+        <code>-ility</code> wearing a hat. Fixing it needs a morphological database that knows
+        <em>bound</em> stems (<code>spect</code>, <code>struct</code>, <code>ceive</code> aren't
+        words), because no "strip it if the remainder is a word" rule can reach them.</li>
+      <li>Candidates are ranked by model probability, which explains only ~16–30% of how word-like
+        humans actually judge a nonword. Neighbourhood density would be the better key.</li>
+      <li>Homographs collapse: <code>saw</code> is both <em>see.PAST</em> and a tool, and the
+        commoner one wins. That needs a part-of-speech tagger.</li>
+      <li>Short words are the weakest link: there are only 33 two-letter strings and ~2,700
+        three-letter ones that aren't already English or a common foreign word, so the commonest
+        words draw from a very thin pool.</li>
+    </ul>
+    <p>
+      The coverage/comprehension gap is the real point. Going from 1,000 to 2,000 words buys the
+      biggest jump in <em>coverage</em> (+9 points) and the smallest in <em>comprehension</em>
+      (+7). Going 5,000→7,000 buys only +1.3 coverage but +17 comprehension. Coverage looks
+      reassuring long before reading does. This is Hu &amp; Nation's 2000 experiment — they
+      replaced rare words with nonsense to force a coverage level, on 66 students. It failed to
+      replicate in 2023.
+    </p>
+  </details>
+</div>
+
+<script>
+// Fallback only — the real text is a random passage from public/passages/, one per page load.
+const DEFAULT_TEXT = `It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife. However little known the feelings or views of such a man may be on his first entering a neighbourhood, this truth is so well fixed in the minds of the surrounding families, that he is considered the rightful property of some one or other of their daughters.`;
+
+let PASSAGE = null;   // {t, b, a, r} — text, book, author, register
+let SHARD = null;     // the one shard we downloaded, for the "another" button
+
+// Laufer & Ravenhorst-Kalovski (2010) Table 3, n=745. Vocabulary -> reading score out of 150
+// (Israeli NITE psychometric English section; national mean 104, SD 24). The non-linearity is
+// the finding, not noise: coverage and comprehension come apart badly at the low end.
+const LAUFER = [[1000,83],[2000,90],[3000,102],[4000,111],[5000,122],[7000,138],[8000,141]];
+
+const TOKEN = /[A-Za-z]+(?:'[A-Za-z]+)?|[^A-Za-z]+/g;
+let WORDS = null;
+
+const $ = id => document.getElementById(id);
+const sliderToVocab = v => Math.round(20 * Math.pow(50000 / 20, v / 1000));
+
+function comprehension(vocab) {
+  if (vocab <= LAUFER[0][0]) return LAUFER[0][1];
+  for (let i = 1; i < LAUFER.length; i++) {
+    if (vocab <= LAUFER[i][0]) {
+      const [x0, y0] = LAUFER[i - 1], [x1, y1] = LAUFER[i];
+      return y0 + (y1 - y0) * (vocab - x0) / (x1 - x0);
+    }
+  }
+  return LAUFER[LAUFER.length - 1][1];
+}
+
+// Deterministic per-word PRNG, so the same word is known or unknown consistently within a
+// render and dragging the slider doesn't make words flicker independently of the curve.
+function hash(s) {
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return ((h >>> 0) % 100000) / 100000;
+}
+
+function matchCase(src, sub) {
+  if (src.length > 1 && src === src.toUpperCase()) return sub.toUpperCase();
+  if (src[0] === src[0].toUpperCase()) return sub[0].toUpperCase() + sub.slice(1);
+  return sub;
+}
+
+function render() {
+  if (!WORDS) return;
+  const vocab = sliderToVocab(+$('vocab').value);
+  const fuzzy = $('fuzzy').checked, mark = $('mark').checked;
+  const text = $('src').value || PASSAGE?.t || DEFAULT_TEXT;
+  let known = 0, total = 0, out = '';
+
+  for (const tok of text.match(TOKEN) || []) {
+    if (!/[A-Za-z]/.test(tok[0])) { out += escapeHtml(tok); continue; }
+    total++;
+    const entry = WORDS[tok.toLowerCase()];
+    if (!entry) { known++; out += escapeHtml(tok); continue; }  // OOV: proper nouns etc.
+    const [sub, rank] = entry;
+    let isKnown;
+    if (fuzzy) {
+      // P(know) = sigmoid(a * (log vocab - log rank)). A real learner's knowledge isn't a step
+      // function; the field's own instrument (IRT/Rasch) is probabilistic, and Laufer called the
+      // lexical threshold probabilistic in 1989.
+      const x = 1.6 * (Math.log(vocab + 1) - Math.log(rank + 1));
+      isKnown = hash(tok.toLowerCase()) < 1 / (1 + Math.exp(-x));
+    } else {
+      isKnown = rank < vocab;
+    }
+    if (isKnown) { known++; out += escapeHtml(tok); }
+    else {
+      const s = escapeHtml(matchCase(tok, sub));
+      out += mark ? `<span class="s" title="${escapeHtml(tok)}">${s}</span>` : s;
+    }
+  }
+
+  $('out').className = '';
+  $('out').innerHTML = out;
+  $('vocabN').textContent = vocab.toLocaleString();
+  const cov = total ? known / total : 1;
+  $('cov').textContent = (cov * 100).toFixed(1) + '%';
+  const unknownRate = 1 - cov;
+  if (unknownRate <= 0.0001) { $('rate').textContent = 'none'; $('rateN').textContent = ''; }
+  else {
+    $('rate').textContent = '1 in ' + Math.round(1 / unknownRate);
+    // Nation's own calibration -- far more visceral than a percentage.
+    $('rateN').textContent = unknownRate > 0.02
+      ? `~${(unknownRate * 10).toFixed(1)} per line` : 'about 1 per 2 lines';
+  }
+  const c = comprehension(vocab);
+  $('comp').textContent = Math.round(c) + '/150';
+
+  const cite = $('cite');
+  if (PASSAGE && !$('src').value) {
+    cite.innerHTML = `<em>${escapeHtml(PASSAGE.b)}</em> — ${escapeHtml(PASSAGE.a)}`
+      + ` <span class="reg">${escapeHtml(PASSAGE.r)}</span>`
+      + ` · <a href="#" id="again">another</a>`;
+    $('again').onclick = e => { e.preventDefault(); pick(); render(); };
+  } else {
+    cite.textContent = '';
+  }
+}
+
+function escapeHtml(s) {
+  return s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+}
+
+function pick() {
+  if (SHARD && SHARD.length) PASSAGE = SHARD[Math.floor(Math.random() * SHARD.length)];
+}
+
+// One random passage per page load, from a 2,600-passage public-domain corpus.
+//
+// The corpus is sharded because the page shows exactly one passage: downloading all 2,600 would
+// cost ~500KB gzipped to use ~0.2KB of it. A random shard is ~20KB, and random-shard +
+// random-passage-within-shard is still uniform over the whole corpus. The "another" button
+// re-picks inside the shard we already have, so it costs nothing.
+const passages = fetch('./passages/manifest.json')
+  .then(r => r.json())
+  .then(m => fetch(`./passages/${String(Math.floor(Math.random() * m.shards)).padStart(2, '0')}.json`))
+  .then(r => r.json())
+  .then(s => { SHARD = s; pick(); })
+  .catch(() => { /* fall back to DEFAULT_TEXT; the toy still works */ });
+
+const lexicon = fetch('./lexicon.json')
+  .then(r => r.json())
+  .then(d => { WORDS = d.words; });
+
+Promise.allSettled([lexicon, passages]).then(() => {
+  if (!WORDS) { $('out').textContent = 'Could not load lexicon.json'; return; }
+  render();
+});
+
+for (const id of ['vocab', 'fuzzy', 'mark']) $(id).addEventListener('input', render);
+$('src').addEventListener('input', render);
+$('src').placeholder = 'Paste anything. Leave empty for a random passage.';
+</script>
+</body>
+</html>

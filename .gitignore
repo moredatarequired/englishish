@@ -1,5 +1,6 @@
-**/__pycache__
-.pytest_cache
-
-books/
-node_modules/
+data/
+.venv/
+__pycache__/
+*.pyc
+.claude/
+.vercel
